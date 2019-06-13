@@ -105,3 +105,4 @@ venv.bak/
 
 # customized
 output/*
+download_fonts/*
