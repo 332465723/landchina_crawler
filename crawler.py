@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
 
-# install tutorial
-# https://www.cnblogs.com/klvchen/p/9196706.html
-# use soft wraps
-# https://blog.csdn.net/geekleee/article/details/73658311
-# replace Rongjilv
-# substitude pattern <^.*等于([\d\.]+)$> with <$1>
 import re
 import time
 import requests
@@ -15,57 +9,28 @@ import StringIO
 import gzip
 from bs4 import BeautifulSoup
 from font_decoder import FontDecoder
+from params import CrawlerHeaders
 
-user_agent_pool = [
-    # u'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_8; en-us) AppleWebKit/534.50 (KHTML, like Gecko) Version/5.1 Safari/534.50',
-    # u'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-us) AppleWebKit/534.50 (KHTML, like Gecko) Version/5.1 Safari/534.50',
-    # u'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0;',
-    # u'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.0; Trident/4.0)',
-    # u'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0)',
-    # u'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)',
-    # u'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:2.0.1) Gecko/20100101 Firefox/4.0.1',
-    u'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36',
-    # u'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36',
-    # u'Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1',
-    # u'Opera/9.80 (Macintosh; Intel Mac OS X 10.6.8; U; en) Presto/2.8.131 Version/11.11',
-    # u'Opera/9.80 (Windows NT 6.1; U; en) Presto/2.8.131 Version/11.11',
-    # u'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_0) AppleWebKit/535.11 (KHTML, like Gecko) Chrome/17.0.963.56 Safari/535.11',
-    # u'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; Maxthon 2.0)',
-    # u'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; TencentTraveler 4.0)',
-    # u'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)',
-    # u'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; The World)',
-    # u'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; Trident/4.0; SE 2.X MetaSr 1.0; SE 2.X MetaSr 1.0; .NET CLR 2.0.50727; SE 2.X MetaSr 1.0)',
-    # u'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; 360SE)',
-]
-common_headers = {
-    u'Accept': u'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-    u'Accept-Encoding': u'gzip, deflate',
-    u'Accept-Language': u'zh-CN,zh;q=0.9',
-    u'Content-Type': u"application/x-www-form-urlencoded",
-    u'User-Agent': random.choice(user_agent_pool),
-    u'Host': u'www.landchina.com',
-    u'Cookie': u'',
-    u'Cache-Control': u'max-age=0',
-    u'Connection': u'keep-alive',
-    u'Referer': u'http://www.landchina.com/',
-}
+crawler_headers = CrawlerHeaders()
 sleep_base_time = 3
+
+
+def UpdateHeaders(func):
+    def wrapper(*args, **kwargs):
+        crawler_headers.update()
+        return func(*args, **kwargs)
+    return wrapper
 
 
 def random_sleep():
     return float(sleep_base_time + random.randint(0, 5))
 
 
+@UpdateHeaders
 def get_web_html(target_url):
-    r = urllib2.Request(target_url, headers=common_headers)
+    r = urllib2.Request(target_url, headers=crawler_headers.common_headers)
     response = urllib2.urlopen(r)
-    if response.headers.has_key('Set-Cookie'):
-        print('cookie compare:')
-        print(common_headers['Cookie'])
-        print(response.headers['Set-Cookie'])
-    else:
-        print('no set-cookie')
-        print(response.headers.__str__())
+
     content = response.read()
     content = StringIO.StringIO(content)
     gzipper = gzip.GzipFile(fileobj=content)
@@ -75,10 +40,10 @@ def get_web_html(target_url):
     if match:
         try:
             font_url = 'http://landchina.com/styles/fonts/' + match.group(1)
-            r = urllib2.Request(font_url, headers=common_headers)
+            r = urllib2.Request(font_url, headers=crawler_headers.common_headers)
             response = urllib2.urlopen(r)
             font_content = response.read()
-            font_file_path = './fonts/%s' % match.group(1)
+            font_file_path = './download_fonts/%s' % match.group(1)
             with open(font_file_path, 'wb') as fp:
                 fp.write(font_content)
             fd = FontDecoder(obj_font_file_path=font_file_path)
@@ -94,6 +59,7 @@ def get_web_html(target_url):
     return html_text
 
 
+@UpdateHeaders
 def get_jieguo_filter_result_html(jieguo_payload):
     url = u"http://www.landchina.com/default.aspx"
     querystring = {
@@ -101,7 +67,7 @@ def get_jieguo_filter_result_html(jieguo_payload):
         u"wmguid": u"75c72564-ffd9-426a-954b-8ac2df0903b7",
         u"p": u""
     }
-    response = requests.request("POST", url, data=jieguo_payload, headers=common_headers, params=querystring)
+    response = requests.request("POST", url, data=jieguo_payload, headers=crawler_headers.common_headers, params=querystring)
     return response.text
 
 
@@ -270,6 +236,7 @@ def extract_churang_land_info_from_html(html_obj):
     return ret_table
 
 
+@UpdateHeaders
 def get_churang_filter_result_html(churang_payload):
     url = u"http://www.landchina.com/default.aspx"
     querystring = {
@@ -277,7 +244,7 @@ def get_churang_filter_result_html(churang_payload):
         u"wmguid": u"20aae8dc-4a0c-4af5-aedf-cc153eb6efdf",
         u"p": u""
     }
-    response = requests.request("POST", url, data=churang_payload, headers=common_headers, params=querystring)
+    response = requests.request("POST", url, data=churang_payload, headers=crawler_headers.common_headers, params=querystring)
     return response.text
 
 
@@ -321,7 +288,7 @@ def churange_announcement_digger(churang_payload):
     return rslt
 
 if __name__ == '__main__':
-    # UPDATE CONDITION_STR and COOKIE
+    # UPDATE CONDITION_STR
     # TODO ChuRang
     with open('./input/churang_payload.txt', 'r') as fp:
         churang_payload = fp.read().strip().decode('utf-8')
@@ -330,15 +297,9 @@ if __name__ == '__main__':
     with open('./input/jieguo_payload.txt', 'r') as fp:
         jieguo_payload = fp.read().strip().decode('utf-8')
 
-    # TODO Cookie
-    with open('./input/cookie.txt', 'r') as fp:
-        cookie_str = fp.read().strip().decode('utf-8')
-        common_headers[u'Cookie'] = cookie_str
-
     print(u'=' * 30)
     print(u'这是土地出让公告和结果公告查询工具，使用指引：')
-    print(u'1. 更新待查类别的查询文件（churang_payload.txt、jieguo_payload.txt）')
-    print(u'2. 更新cookie文件（cookie.txt）')
+    print(u'请更新待查类别的查询文件（churang_payload.txt、jieguo_payload.txt）')
     print(u'=' * 30)
 
     print(u'输入你需要查询的类别:')
@@ -350,22 +311,26 @@ if __name__ == '__main__':
     if input_cmd not in ('1', '2'):
         exit(0)
     elif input_cmd == '1':
-        common_headers[u'Referer'] = u'http://www.landchina.com/default.aspx?tabid=261&wmguid=20aae8dc-4a0c-4af5-aedf-cc153eb6efdf&p='
+        output_file_name = raw_input('将输出成TXT格式，请输入输出文件名：churang_output_')
+        crawler_headers.update(Referer= 'http://www.landchina.com/default.aspx?tabid=261&wmguid=20aae8dc-4a0c-4af5-aedf-cc153eb6efdf&p=')
         rslt = churange_announcement_digger(churang_payload)
         print('%s rows generated!' % len(rslt))
-        with open('./output/churang_output.txt', 'w') as fp:
-            header = u'|'.join([x[0] for x in rslt[0]]) + u'\n'
-            fp.write(header.encode('utf-8'))
-            for row in rslt:
-                tmp_line = u'|'.join([x[1] for x in row]) + u'\n'
-                fp.write(tmp_line.encode('utf-8'))
+        if len(rslt) > 0:
+            with open('./output/churang_output_%s.txt' % output_file_name, 'w') as fp:
+                header = u'|'.join([x[0] for x in rslt[0]]) + u'\n'
+                fp.write(header.encode('utf-8'))
+                for row in rslt:
+                    tmp_line = u'|'.join([x[1] for x in row]) + u'\n'
+                    fp.write(tmp_line.encode('utf-8'))
     else:
-        common_headers[u'Referer'] = u'http://www.landchina.com/default.aspx?tabid=263&wmguid=75c72564-ffd9-426a-954b-8ac2df0903b7&p='
+        output_file_name = raw_input('将输出成TXT格式，请输入输出文件名：jieguo_output_')
+        crawler_headers.update(Referer=u'http://www.landchina.com/default.aspx?tabid=263&wmguid=75c72564-ffd9-426a-954b-8ac2df0903b7&p=')
         rslt = jieguo_announcement_digger(jieguo_payload)
         print('%s rows generated!' % len(rslt))
-        with open('./output/jieguo_output.txt', 'w') as fp:
-            header = u'|'.join([x[0] for x in rslt[0]]) + u'\n'
-            fp.write(header.encode('utf-8'))
-            for row in rslt:
-                tmp_line = u'|'.join([x[1] for x in row]) + u'\n'
-                fp.write(tmp_line.encode('utf-8'))
+        if len(rslt) > 0:
+            with open('./output/jieguo_output_%s.txt' % output_file_name, 'w') as fp:
+                header = u'|'.join([x[0] for x in rslt[0]]) + u'\n'
+                fp.write(header.encode('utf-8'))
+                for row in rslt:
+                    tmp_line = u'|'.join([x[1] for x in row]) + u'\n'
+                    fp.write(tmp_line.encode('utf-8'))

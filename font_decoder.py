@@ -4,7 +4,7 @@ from fontTools.ttLib import TTFont
 
 
 class FontDecoder(object):
-    def __init__(self, obj_font_file_path, std_font_file_path='fonts/microsoft_yahei_simpli.woff'):
+    def __init__(self, obj_font_file_path, std_font_file_path='std_fonts/microsoft_yahei_simpli.woff'):
         self.obj_font = TTFont(obj_font_file_path)
         self.std_font = TTFont(std_font_file_path)
         self.word_map = {}
