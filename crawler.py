@@ -17,6 +17,7 @@ sleep_base_time = 3
 
 def UpdateHeaders(func):
     def wrapper(*args, **kwargs):
+        print('Log from: %s' % func.__name__)
         crawler_headers.update()
         return func(*args, **kwargs)
     return wrapper
