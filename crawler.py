@@ -11,23 +11,14 @@ from bs4 import BeautifulSoup
 from font_decoder import FontDecoder
 from params import CrawlerHeaders
 
-crawler_headers = CrawlerHeaders()
+crawler_headers = CrawlerHeaders(cookie_file='input/cookie.txt')
 sleep_base_time = 3
-
-
-def UpdateHeaders(func):
-    def wrapper(*args, **kwargs):
-        print('Log from: %s' % func.__name__)
-        crawler_headers.update()
-        return func(*args, **kwargs)
-    return wrapper
 
 
 def random_sleep():
     return float(sleep_base_time + random.randint(0, 5))
 
 
-@UpdateHeaders
 def get_web_html(target_url):
     r = urllib2.Request(target_url, headers=crawler_headers.common_headers)
     response = urllib2.urlopen(r)
@@ -60,7 +51,6 @@ def get_web_html(target_url):
     return html_text
 
 
-@UpdateHeaders
 def get_jieguo_filter_result_html(jieguo_payload):
     url = u"http://www.landchina.com/default.aspx"
     querystring = {
@@ -237,7 +227,6 @@ def extract_churang_land_info_from_html(html_obj):
     return ret_table
 
 
-@UpdateHeaders
 def get_churang_filter_result_html(churang_payload):
     url = u"http://www.landchina.com/default.aspx"
     querystring = {
@@ -313,7 +302,7 @@ if __name__ == '__main__':
         exit(0)
     elif input_cmd == '1':
         output_file_name = raw_input('将输出成TXT格式，请输入输出文件名：churang_output_')
-        crawler_headers.update(Referer= 'http://www.landchina.com/default.aspx?tabid=261&wmguid=20aae8dc-4a0c-4af5-aedf-cc153eb6efdf&p=')
+        crawler_headers.common_headers.update(Referer= 'http://www.landchina.com/default.aspx?tabid=261&wmguid=20aae8dc-4a0c-4af5-aedf-cc153eb6efdf&p=')
         rslt = churange_announcement_digger(churang_payload)
         print('%s rows generated!' % len(rslt))
         if len(rslt) > 0:
@@ -325,7 +314,7 @@ if __name__ == '__main__':
                     fp.write(tmp_line.encode('utf-8'))
     else:
         output_file_name = raw_input('将输出成TXT格式，请输入输出文件名：jieguo_output_')
-        crawler_headers.update(Referer=u'http://www.landchina.com/default.aspx?tabid=263&wmguid=75c72564-ffd9-426a-954b-8ac2df0903b7&p=')
+        crawler_headers.common_headers.update(Referer=u'http://www.landchina.com/default.aspx?tabid=263&wmguid=75c72564-ffd9-426a-954b-8ac2df0903b7&p=')
         rslt = jieguo_announcement_digger(jieguo_payload)
         print('%s rows generated!' % len(rslt))
         if len(rslt) > 0:

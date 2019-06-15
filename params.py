@@ -49,51 +49,18 @@ class CrawlerHeaders(object):
         u'Referer': u'http://www.landchina.com/',
     }
 
-    common_cookie = {
-        u'ASP.NET_SessionId': u'bx5nt1pin3xo2mrhwsc4fwes',
-        u'Hm_lvt_83853859c7247c5b03b527894622d3fa': u'1560425088',
-        u'Hm_lpvt_83853859c7247c5b03b527894622d3fa': u'1560432160',
-        u'srcurl': u'',
-        u'yunsuo_session_verify': u'',
-        u'security_session_mid_verify': u'2051aa040ed2aa2bc8f69a34e6ee9f09'
-    }
+    common_cookie = u''
 
     base_url = 'http://www.landchina.com/?security_verify_data=%s' % str2hex('1920,1080')
 
-    def __init__(self):
-        new_cookie = self.init_cookie()
-        update_content = {
-            u'Cookie': new_cookie,
+    def __init__(self, cookie_file=None):
+        if cookie_file is None:
+            raise Exception('Cannot locate cookie file')
+
+        with open(cookie_file, 'r') as fp:
+            self.common_cookie = fp.read().strip().decode('utf-8')
+
+        self.common_headers.update({
             u'User-Agent': random.choice(self.user_agent_pool),
-            u'srcurl': str2hex(self.base_url)
-        }
-        self.common_headers.update(update_content)
-
-    def get_cookie_str(self):
-        kv_arr = self.common_cookie.items()
-        # kv_arr.sort(key=lambda x:x[0], reverse=True)
-        return u'; '.join([ '{}={}'.format(k, v) for k, v in kv_arr ])
-
-    def init_cookie(self):
-        ret = requests.request('GET', self.base_url, headers=self.common_headers)
-        set_cookie = ret.headers.get('Set-Cookie', None)
-        if set_cookie is None:
-            raise Exception('No set cookie found in response headers!')
-
-        match = re.search(ur'(yunsuo_session_verify)=(.*?);', set_cookie)
-        if match:
-            print('NEW Cookie got: %s=%s' % (match.group(1), match.group(2)))
-            self.common_cookie.update({ match.group(1) : match.group(2) })
-            # self.common_cookie.update({ u'Hm_lvt_83853859c7247c5b03b527894622d3fa': str(int(time.time()-1)) })
-            # self.common_cookie.update({ u'Hm_lpvt_83853859c7247c5b03b527894622d3fa': str(int(time.time()-1)) })
-            return self.get_cookie_str()
-        else:
-            raise Exception('Could not locate [yunsuo_session_verify] for crawler!')
-
-    def update(self, **kwargs):
-        self.common_cookie.update({ u'Hm_lpvt_83853859c7247c5b03b527894622d3fa': str(int(time.time()-1)) })
-        self.common_headers.update({ u'Cookie': self.get_cookie_str() })
-        if len(kwargs) > 0:
-            self.common_headers.update(kwargs)
-        print('HTTP headers updated!')
-
+            u'Cookie': self.common_cookie
+        })
