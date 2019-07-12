@@ -64,3 +64,12 @@ class CrawlerHeaders(object):
             u'User-Agent': random.choice(self.user_agent_pool),
             u'Cookie': self.common_cookie
         })
+
+
+    def update_cookie_ts(self, ts):
+        prefix = u'Hm_lpvt_83853859c7247c5b03b527894622d3fa='
+        self.common_cookie = re.sub(ur'%s\d+' % prefix, u'%s%s' % (prefix, ts), self.common_cookie)
+        self.common_headers.update({
+            u'Cookie': self.common_cookie
+        })
+

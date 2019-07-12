@@ -21,7 +21,7 @@ def random_sleep():
 
 def get_web_html(target_url):
     r = urllib2.Request(target_url, headers=crawler_headers.common_headers)
-    response = urllib2.urlopen(r)
+    response = urllib2.urlopen(r, timeout=10)
 
     content = response.read()
     content = StringIO.StringIO(content)
@@ -33,7 +33,7 @@ def get_web_html(target_url):
         try:
             font_url = 'http://landchina.com/styles/fonts/' + match.group(1)
             r = urllib2.Request(font_url, headers=crawler_headers.common_headers)
-            response = urllib2.urlopen(r)
+            response = urllib2.urlopen(r, timeout=10)
             font_content = response.read()
             font_file_path = './download_fonts/%s' % match.group(1)
             with open(font_file_path, 'wb') as fp:
@@ -48,6 +48,7 @@ def get_web_html(target_url):
             print(font_url)
             pass
 
+    crawler_headers.update_cookie_ts(int(time.time()))
     return html_text
 
 
